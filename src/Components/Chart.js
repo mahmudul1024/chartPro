@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -12,61 +12,36 @@ import {
 } from "recharts";
 import Table from "./Table";
 
-const data = [
-  {
-    name: "Page A",
-    uv: 4000,
-    pv: 2400,
-    amt: 2400,
-  },
-  {
-    name: "Page B",
-    uv: 3000,
-    pv: 1398,
-    amt: 2210,
-  },
-  {
-    name: "Page C",
-    uv: 2000,
-    pv: 9800,
-    amt: 2290,
-  },
-  {
-    name: "Page D",
-    uv: 2780,
-    pv: 3908,
-    amt: 2000,
-  },
-  {
-    name: "Page E",
-    uv: 1890,
-    pv: 4800,
-    amt: 2181,
-  },
-  {
-    name: "Page F",
-    uv: 2390,
-    pv: 3800,
-    amt: 2500,
-  },
-  {
-    name: "Page G",
-    uv: 3490,
-    pv: 4300,
-    amt: 2100,
-  },
-];
-
 const Chart = () => {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const activeItem = data[activeIndex];
+  const [ChartData, setChartData] = useState({});
 
-  const handleClick = useCallback(
-    (entry: any, index: number) => {
-      setActiveIndex(index);
-    },
-    [setActiveIndex]
-  );
+  useEffect(() => {
+    fetch("tweetsdatatask.json")
+      .then((response) => response.json())
+      .then((data) => {
+        const dates = data.stats.twitter.timelineStats.timeline; //array
+        const categories =
+          data.stats.twitter.timelineStats.timeline[0].sentimentAsCategories;
+        //3 objects inside as categories
+
+        const newBar = dates.map((date) => {
+          const newDate = date.currentTimeStamp.split("T")[0];
+          const positive = date.sentimentAsCategories.positiveTweets;
+          const negative = date.sentimentAsCategories.negativeTweets;
+          const neutral = date.sentimentAsCategories.neutralTweets;
+
+          const newBar = { positive, negative, neutral, newDate };
+          return newBar;
+        });
+
+        console.log("new value ", newBar);
+        setChartData(newBar);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }, []);
+
   return (
     <div>
       <div
@@ -74,23 +49,26 @@ const Chart = () => {
         style={{ height: "100vh" }}
       >
         <div className="  ">
-          <BarChart width={600} height={300} data={data}>
-            <XAxis dataKey="name" stroke="#8884d8" />
+          <BarChart width={600} height={500} data={ChartData}>
+            <XAxis dataKey="newDate" stroke="#8884d8" />
             <YAxis />
-            <Tooltip wrapperStyle={{ width: 100, backgroundColor: "#ccc" }} />
+            <Tooltip wrapperStyle={{ width: 120, backgroundColor: "#ccc" }} />
             <Legend
-              width={100}
+              width={300}
               wrapperStyle={{
-                top: 40,
-                right: 20,
+                bottom: 0,
+                left: 250,
+
                 backgroundColor: "#f5f5f5",
                 border: "1px solid #d5d5d5",
                 borderRadius: 3,
                 lineHeight: "40px",
               }}
             />
-            <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
-            <Bar dataKey="uv" fill="#8884d8" barSize={30} />
+
+            <Bar dataKey="positive" fill="#8884d8" />
+            <Bar dataKey="negative" fill="#82ca9d" />
+            <Bar dataKey="neutral" fill="#82cfff" />
           </BarChart>
         </div>
       </div>
